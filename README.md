@@ -1,4 +1,4 @@
-# ⚛️ Quantum AI for Multimodal Early Cancer Detection 🔬🧪🏥
+# :atom: Quantum AI for Multimodal Early Cancer Detection 🔬🧪🏥
 ## The Blaise Pascal Quantum Challenge
 
 ## Overview of the project
