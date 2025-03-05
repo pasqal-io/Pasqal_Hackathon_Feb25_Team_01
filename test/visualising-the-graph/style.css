@@ -1,0 +1,381 @@
+@font-face {
+    font-family: "Century Gothic";
+    src: url('./fonts/century-gothic/GOTHIC.TTF') format('truetype'),
+         url('./fonts/century-gothic/GOTHICB.TTF') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    height: 100vh;
+    font-family: "Century Gothic", sans-serif;
+    background-color: #173036;
+    margin: 0;
+    overflow: auto;
+    /*opacity: 0;*/
+    transition: opacity 0.5s ease;
+    color: #ffffff;
+}
+body.non-index-page {
+    background-color: #173036; /* Match the main background */
+}
+
+/* Fade-in effect when the page loads */
+body.fade-in {
+    opacity: 1;
+}
+
+/* Fade-out effect when navigating away */
+body.fade-out {
+    opacity: 0;
+}
+
+/* Footer styling for the index page */
+.footer {
+    text-align: center;
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    color: #ffffff;
+    background-color: #EED9C4; /* Match index page background */
+    position: absolute;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+
+    /*opacity: 0; !* Start hidden *!*/
+    /*z-index: 100;*/
+}
+
+/* Footer styling for non-index pages */
+.non-index-page .footer {
+    background-color: #f0efe9; /* Lighter beige background for non-index pages */
+}
+
+
+/*      Index page        */
+.circle-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.svg-circles {
+    width: 100%;
+    height: 100%;
+}
+.svg-circles-alias {
+    width: 100%;
+    height: 100%;
+}
+
+
+
+
+
+
+
+/* Typing animation */
+@keyframes typing {
+    from { width: 0; }
+    to { width: 31ch; }
+}
+
+
+
+/* Fade-in animation for arcs */
+.svg-circles {
+    opacity: 0;
+    animation: fadeIn 2s ease forwards;
+    animation-delay: 2s;
+}
+
+.svg-circles-alias {
+    opacity: 0;
+    animation: fadeIn 0.5s ease forwards;
+    /*animation-delay: 4s;*/
+}
+
+@keyframes fadeIn {
+    to { opacity: 1; }
+}
+
+
+
+/* Adjusted Sidebar CSS */
+.sidebar {
+    position: fixed;
+    top: 2%;       /* Start slightly below the top */
+    bottom: 0;     /* Extend the sidebar to the bottom of the viewport */
+    left: 0;
+    width: 15%;    /* Adjust the width as needed */
+    background-color: #173036; /* Background color */
+    display: flex;
+    flex-direction: column; /* Stack items vertically */
+    align-items: center;    /* Center items horizontally */
+    gap: 0;                 /* Gap between items */
+    justify-content: flex-start;
+    overflow-y: auto;       /* Enable vertical scrolling when content overflows */
+    scroll-behavior: smooth; /* Smooth scrolling for better UX */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    padding: 10px 0;        /* Optional padding for top and bottom */
+}
+
+
+.subgroup-controls {
+    /*position: absolute; !* Position relative to the viewport, which makes it stay in place while scrolling *!*/
+    /*position: static; !* Position relative to the viewport, which makes it stay in place while scrolling *!*/
+
+    /*top: 20%; !* Align it at the top of the viewport *!*/
+    /*left: 5%;*/
+    /*width: 10%;*/
+    /*flex-grow: 0; !* Ensures that this div does not grow *!*/
+    /*flex-shrink: 0; !* Ensures that this div does not shrink *!*/
+    /*display: flex;*/
+    /*flex-direction: column;*/
+    padding: 10px;
+    border-radius: 40px;
+    background-color: #f0efe9;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    font-size: 12px; /* Sets the base font size */
+    /*margin-bottom: auto; !* Space below this item will be added to the next flex item *!*/
+    margin-bottom: 20px;
+    /*z-index: 999;*/
+}
+/*`Classes`*/
+.button {
+    border: none;  /* No border for a cleaner look */
+    padding: 10px 20px;  /* Padding for spacing inside the button */
+    text-align: center;  /* Center the text inside the button */
+    text-decoration: none;  /* No underline or other text decoration */
+    display: inline-block;  /* Allows buttons to sit in a row */
+    font-size: var(--text-size);  /* Match font size from description container */
+    margin: 4px 2px;  /* Spacing between buttons */
+    cursor: pointer;  /* Cursor becomes a pointer on hover */
+    border-radius: 20px;  /* Rounded corners to match description container */
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);  /* Subtle shadow for 3D effect */
+    transition-duration: 0.4s;  /* Smooth transition for mouse events */
+    font-family: 'Century Gothic', sans-serif; /* Sets the font for the text */
+    z-index: 110;
+}
+.cycle-list .button {
+    width: 100%;              /* Make buttons occupy full width of their container */
+}
+.button:hover {
+    opacity: 0.5;
+}
+.button.active {
+    opacity: 0.5;
+}
+
+
+
+#cycle-text {
+    margin-bottom: 0; /* Add space below the text */
+
+}
+#reset-button {
+    position: fixed; /* Position relative to the viewport, which makes it stay in place while scrolling */
+    /*position: static;*/
+    bottom: 35px;
+    height: 5%;
+    left: 2%;
+    /*width: 6%; !* Adjust width as necessary *!*/
+    /*flex-grow: 0; !* Ensures that this div does not grow *!*/
+    flex-shrink: 0; /* Ensures that this div does not shrink */
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border-radius: 40px;
+    background: #f0efe9;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
+    font-family: 'Century Gothic', sans-serif;
+    font-size: 12px;
+    align-self: center;
+    justify-content: center;
+    z-index: 999;
+}
+
+#reset-button:hover {
+    opacity: 0.5;
+}
+
+.ac-logo {
+    position: absolute;
+    width: 250px; /* Set the width to a smaller size */
+    height: auto; /* Keep the height proportional */
+    /*position: fixed; !* Use fixed positioning to place it relative to the viewport *!*/
+    left: 0; /* Align to the left of the viewport */
+    bottom: 0; /* Align to the bottom of the viewport */
+    margin: 20px;
+}
+.ac-logo-bare {
+    position: fixed;
+    width: 250px; /* Set the width to a smaller size */
+    height: auto; /* Keep the height proportional */
+    /*position: fixed; !* Use fixed positioning to place it relative to the viewport *!*/
+    right: 0; /* Align to the left of the viewport */
+    bottom: 0; /* Align to the bottom of the viewport */
+    margin: 20px;
+}
+
+/* Nav Button Styling - Miniature Arc Buttons */
+.nav-button {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /*position: absolute;*/
+    z-index: 999;
+    /*flex-shrink: 0; !* Prevent shrinking *!*/
+    /*margin-bottom: auto; !* Space below this item will be added to the next flex item *!*/
+    /*position: static;*/
+    margin: 0;
+}
+
+/* Make navigation button font bold and larger */
+.nav-button svg .mini-text {
+    font-size: 12; /* Larger font size for button labels */
+    font-weight: normal; /* Bold text */
+    fill: #2B2D2F;
+}
+
+.nav-button svg.mini-svg {
+    width: 100%;
+    height: 100%;
+}
+
+
+
+
+
+.content {
+    position: relative;
+    width: 85%;
+    height: 100%;
+    background-color: #173036; /* Match the main background */
+    font-family: "Century Gothic", sans-serif;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    align-items: center; /* Horizontally center */
+    justify-content: flex-start; /* Align to top */
+    overflow-y: auto; /* Enable vertical scrolling */
+    left: 15%;
+}
+
+.non-home-heading {
+    position: relative;
+    top: 50px;
+    text-align: center;
+    left: -7.5%;
+    color: #ffffff;
+}
+
+/*      AI Projects page        */
+.graph-container {
+    width: 100%; /* Adjust width to full since we don't need space for controls */
+    height: 90vh; /* Increase to take up more of the viewport */
+    left: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align content at the top */
+    position: relative; /* Change from absolute to relative */
+    margin-top: 50px; /* Add some margin at the top */
+    z-index: 9999;
+    overflow-y: scroll; /* Enable vertical scrolling */
+    overflow-x: auto; /* Allow horizontal scrolling if needed */
+}
+
+.description-container {
+    width: 15%;
+    position: fixed;
+    top: 17%;
+    right: 1%;
+    height: 5%;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    border-radius: 40px;
+    background: #1f4048;
+    color: #ffffff;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.4);
+    font-size: 14px;
+    overflow-y: auto;
+    transition: height 0.5s ease;
+    margin-left: auto;
+    margin-right: auto;
+    justify-content: center;
+    text-align: center;
+    z-index: 300;
+}
+
+.text-content {
+    color: #ffffff;
+}
+
+text {
+    fill: #ffffff;
+}
+
+text:hover {
+    opacity: 0.5;
+}
+
+.custom-margin {
+    margin-top: 10px;
+}
+.text-left {
+    text-align: left;
+}
+.text-bold {
+    font-weight: bold;
+}
+.text-italic {
+    font-style: italic;
+}
+.text-center {
+    text-align: center;
+}
+p {
+    margin-top: 4px; /* Remove top margin if any */
+    margin-bottom: 16px; /* Larger space after paragraphs */
+}
+
+.index-ac-logo {
+    position: relative;
+    width: 50px; /* Set the width to a smaller size */
+    height: auto; /* Keep the height proportional */
+
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+.large-text {
+    font-size: 20px;
+    color: #ffffff;
+}
+
+.intro-text {
+    left: -7.5%;
+    position: relative;
+    text-align: left;
+    margin-top: 7%;
+    font-size: 18px;
+    color: #ffffff;
+}
+
+
+
+
