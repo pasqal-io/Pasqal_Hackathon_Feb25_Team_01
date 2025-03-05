@@ -247,7 +247,8 @@ class OutputBlock(nn.Module):
             feature_mlp = nn.Sequential(
                 nn.Linear(in_ch, 512, bias=True),
                 nn.ReLU(inplace=True),
-                nn.Linear(512, n_classes, bias=False)
+                nn.Linear(512, n_classes, bias=False),
+                nn.Sigmoid()
             )
             setattr(self, 'feature_mlp_%d' %i, feature_mlp)
 

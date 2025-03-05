@@ -7,12 +7,12 @@ from components import RMRM, OutputBlock
 class Network(torch.nn.Module):
     def __init__(self, opts, n_out_features, batch_size, device, clinical_embedding_dim, image_embedding_dim):
         """
-        Network for node classification based on clinical and image embeddings.
+        Network for binary classification based on clinical and image embeddings.
 
         Parameters:
         - clinical_embedding_dim: dimentions of clinical embeddings
         - image_embedding_dim: dimentions of image embeddings
-        - n_out_features: Number of output classes for classification (binary or multi-class)
+        - n_out_features: Number of output classes for classification (1 for binary classification)
         """
         super(Network, self).__init__()
 
@@ -32,6 +32,7 @@ class Network(torch.nn.Module):
         # Global Average Pooling (GAP) for Image Embeddings
         self.gap = AvgPool2d(kernel_size=(6,6))
 
+        # Output MLP for binary classification (0 for censored, 1 for progressed)
         self.output_mlp = OutputBlock(self.fv_dim * (self.n_clinical + 1), n_out_features)
 
     def get_edges(self, n_clinical, n_nodes):
