@@ -1,4 +1,4 @@
-# ⚛️ Quantum AI for Multimodal Early Cancer Detection 🔬🏥
+# ⚛️ Quantum AI for Multimodal Liver Cancer Prediction 🔬🏥
 ## The Blaise Pascal Quantum Challenge
 
 A multimodal Quantum AI solution integrating clinical and imaging data in a Graph Neural Network (GNN) for early cancer detection. Enhances healthcare access, aligns with SDG 3, and transforms global health sustainability with real-world data integration.
