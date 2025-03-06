@@ -54,3 +54,14 @@ venv.bak/
 .Trashes
 ehthumbs.db
 Thumbs.db 
+
+# Experiments results
+experiments/
+
+# Image data
+*.dcm
+*.png
+*.zip
+
+# Image data
+*.csv
