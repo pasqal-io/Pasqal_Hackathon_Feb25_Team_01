@@ -2,25 +2,23 @@ import torch
 import numpy as np
 from torch.nn import AvgPool2d
 from torch_geometric.data import Data
-from components import RMRM, OutputBlock
+from model.components import RMRM, OutputBlock
 
 class Network(torch.nn.Module):
-    def __init__(self, opts, n_out_features, batch_size, device, clinical_embedding_dim, image_embedding_dim):
+    def __init__(self, opts, n_out_features, batch_size, device):
         """
         Network for binary classification based on clinical and image embeddings.
 
         Parameters:
-        - clinical_embedding_dim: dimentions of clinical embeddings
-        - image_embedding_dim: dimentions of image embeddings
+        - opts: model options
         - n_out_features: Number of output classes for classification (1 for binary classification)
         """
         super(Network, self).__init__()
 
-        self.fv_dim = clinical_embedding_dim
-        self.img_dim = image_embedding_dim
+        self.fv_dim = 128           # Embedding dimention
 
-        self.n_clinical = 9   # Number of clinical embeddings
-        self.n_pixel = 36     # Number of image regions (assuming 6x6 feature map)
+        self.n_clinical = 38        # Number of features in clinical embeddings
+        self.n_pixel = 6*6          # Number of image regions
         self.n_nodes = self.n_clinical + self.n_pixel
 
         self.batch_size = batch_size

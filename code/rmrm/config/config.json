@@ -8,7 +8,7 @@
     },
     "training_params":{
         "batch_size": 8,
-        "total_epochs": 20,
+        "total_epochs": 100,
         "learning_rate": 0.0001,
         "beta1": 0.9,
         "beta2": 0.999,

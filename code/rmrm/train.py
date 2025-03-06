@@ -2,12 +2,11 @@ import argparse
 import logging
 import sys
 import os
-import pickle
 import pandas as pd
 
 import torch
 from torch.utils.data import DataLoader, Dataset
-from torch.nn import BCELoss  # Import BCELoss for binary classification
+from torch.nn import BCELoss                        # Import BCELoss for binary classification
 
 from model.network import Network
 from utils.utils import *
@@ -30,23 +29,12 @@ class PrecomputedEmbeddingsDataset(Dataset):
         self.labels_file = labels_file
         self.isTraining = isTraining
 
-        # Data files
-        if isTraining:
-            patient_subset_txt = fold_splits + '/' + str(fold_id) + '_train.txt'
-        else:
-            patient_subset_txt = fold_splits + '/' + str(fold_id) + '_test.txt'
+        # Target labels
+        self.labels_df = pd.read_csv(self.labels_file) 
 
-        # Get patient IDs from the split file
-        with open(patient_subset_txt, 'r') as f:
-            self.patient_ids = [line.strip() for line in f.readlines()]
-        
-        # Format patient IDs to match embedding filenames
-        self.patient_ids = [os.path.basename(x).split('_')[0] for x in self.patient_ids]
-        self.patient_ids = [x[:2] + '-' + x[2:] for x in self.patient_ids]
-
-        # All the labels for this data subset
-        data_df = pd.read_csv(self.labels_file)
-        self.labels_df = data_df.iloc[:,:3]  # First 3 columns contain ID and survival data
+        # Get patients ids from labels file
+        self.patient_ids = self.labels_df.iloc[:, 0].tolist()
+        logging.info(f"Total Number of Patients: {len(self.patient_ids)}")
 
     def __len__(self):
         'Denotes the total number of samples'
@@ -55,42 +43,42 @@ class PrecomputedEmbeddingsDataset(Dataset):
     def __getitem__(self, index):
         'Generates one sample of data'
         ID = self.patient_ids[index]
+        logging.info(f"ID: {ID}")
         
-        # Load pre-computed embeddings
-        img_embedding_path = os.path.join(self.img_embeddings_dir, ID.replace('-', '') + '_img_embedding.pkl')
-        clinical_embedding_path = os.path.join(self.clinical_embeddings_dir, ID.replace('-', '') + '_clinical_embedding.pkl')
+        # Load PRE-TRAINED embeddings
+        # CLINICAL EMBEDDINGS
+        clinical_embedding_file = "data/Clinical data embeddings/top_9_clinical_embeddings.npy"
+        if os.path.exists(clinical_embedding_file):
+            clinical_embds = np.load(clinical_embedding_file)
+            clinical_embds = torch.tensor(clinical_embds, dtype=torch.float32)
+            clinical_embds = clinical_embds[index, :, :]
+            logging.info("Loaded clinical embeddings of size %s", clinical_embds.size())
+        else:
+            raise FileNotFoundError(f"Clinical embeddings not found at {clinical_embedding_file}")
         
-        # Load embeddings using pickle
-        with open(img_embedding_path, 'rb') as f:
-            img_embedding = pickle.load(f)
-        
-        with open(clinical_embedding_path, 'rb') as f:
-            clinical_embedding = pickle.load(f)
+        # IMAGE EMBEDDINGS
+        image_embedding_file = "data/Image data embeddings/image_embeddings_9_patients.npy"
+        if os.path.exists(image_embedding_file):
+            image_embds= np.load(image_embedding_file)
+            image_embds = torch.tensor(image_embds, dtype=torch.float32)
+            image_embds = image_embds[index, :, :]
+            logging.info("Loaded clinical embeddings of size %s", image_embds.size())
+        else:
+            raise FileNotFoundError(f"Clinical embeddings not found at {image_embedding_file}")
             
-        # Get labels
-        labels = self.labels_df.loc[self.labels_df['METABRIC.ID'] == ID].values.tolist()
+        # Labels (currenly only one label is used for binary classification)
+        labels = self.labels_df.loc[index].tolist()
 
-        labels_time = np.zeros(1)
-        labels_censored = np.zeros(1)
-
-        labels_time[0] = labels[0][-1]
-        labels_censored[0] = int(labels[0][-2])
-
-        # Convert to tensor
-        img_embedding_torch = torch.from_numpy(img_embedding).float()
-        clinical_embedding_torch = torch.from_numpy(clinical_embedding).float()
-        labels_torch = torch.from_numpy(labels_time).float()
-        censored_torch = torch.from_numpy(labels_censored).long()
+        # Convert Labels to tensor
+        labels_torch = torch.tensor(labels[1], dtype=torch.float32)
 
         if self.isTraining:
-            return img_embedding_torch, clinical_embedding_torch, labels_torch, censored_torch
+            return image_embds, clinical_embds, labels_torch
         else:
-            return img_embedding_torch, clinical_embedding_torch, labels_torch, censored_torch, ID
+            return image_embds, clinical_embds, labels_torch, ID
 
 def main(config):
-
-    config_fold = config.config_file + str(config.fold_id) + '.json'
-    json_opts = json_file_to_pyobj(config_fold)
+    json_opts = json_file_to_pyobj(config.config_file)
 
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
                         level=logging.INFO,
@@ -115,9 +103,10 @@ def main(config):
 
     # Initialize the model - we'll still use the original Network class
     # but we'll skip the feature extraction parts in the forward pass
-    model = Network(model_opts, n_out_features, 0,  # n_markers is not used when using precomputed embeddings
-                    json_opts.training_params.batch_size, device,
-                    0, [])  # n_cont_cols and n_classes_cat are not used when using precomputed embeddings
+    model = Network(model_opts, 
+                    n_out_features,
+                    json_opts.training_params.batch_size, 
+                    device) 
     model = model.to(device)
 
     # Dataloader for precomputed embeddings
@@ -136,7 +125,9 @@ def main(config):
     
     train_loader = DataLoader(dataset=train_dataset, 
                               batch_size=json_opts.training_params.batch_size, 
-                              shuffle=True, num_workers=num_workers, drop_last=True)
+                              shuffle=True, 
+                              num_workers=num_workers, 
+                              drop_last=True)
 
     n_train_examples = len(train_loader)
     logging.info("Total number of training examples: %d" % n_train_examples)
@@ -170,12 +161,11 @@ def main(config):
     for epoch in range(initial_epoch, json_opts.training_params.total_epochs):
         epoch_train_loss = 0.
 
-        for _, (img_embeddings, clinical_embeddings, batch_y, death_indicator) in enumerate(train_loader):
+        for _, (img_embeddings, clinical_embeddings, batch_y) in enumerate(train_loader):
 
             # Transfer to GPU
             img_embeddings, clinical_embeddings = img_embeddings.to(device), clinical_embeddings.to(device)
             batch_y = batch_y.to(device)
-            death_indicator = death_indicator.to(device)
             
             # Reshape embeddings for more efficient processing
             # Ensure image embeddings match expected dimensions
@@ -183,21 +173,21 @@ def main(config):
             
             # Ensure clinical embeddings match expected dimensions
             clinical_embeddings = clinical_embeddings.view(json_opts.training_params.batch_size, model.n_clinical, -1)
-            
+
             optimizer.zero_grad()
 
             # Forward pass with precomputed embeddings
             final_pred = model.forward(clinical_embeddings, img_embeddings)
+            final_pred = final_pred.view(-1).float()        # reshape to match y dimentions and type
+
+            # Binary cross-entropy loss for binary classification
+            loss = BCELoss()(final_pred, batch_y)
 
             # Optimisation
-            if torch.sum(death_indicator) > 0.0:
-                # Binary cross-entropy loss for binary classification
-                loss = BCELoss()(final_pred, death_indicator.float())
-                
-                loss.backward()
-                optimizer.step()
+            loss.backward()
+            optimizer.step()
 
-                epoch_train_loss += loss.detach().cpu().numpy()
+            epoch_train_loss += loss.detach().cpu().numpy()
            
                 
         # Log training loss
@@ -224,7 +214,7 @@ def main(config):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--config_file', default='configs/config', type=str,
+    parser.add_argument('--config_file', default='code/rmrm/config/config.json', type=str,
                         help='config file path')
     parser.add_argument('--resume_epoch', default=None, type=int,
                         help='resume training from this epoch, set to None for new training')
