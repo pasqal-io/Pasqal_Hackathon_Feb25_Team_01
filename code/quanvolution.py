@@ -5,71 +5,45 @@ from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
 import pandas as pd
-import pydicom
 from qadence import Backend, rydberg_hea
 
-class DICOMDataset(Dataset):
+class PNGDataset(Dataset):
     def __init__(self, root_dir):
         self.image_paths = []
         self.labels = []
         
-        # No specific transformations here, just converting to tensor
-        base_transform = [
-            transforms.ToTensor(),
-            transforms.Resize((36,36))
-        ]
-        self.transform = transforms.Compose(base_transform)
+        self.transform = transforms.Compose([
+            transforms.Grayscale(num_output_channels=1),
+            transforms.Resize((36, 36)),  # Tamanho 36x36
+            transforms.ToTensor()
+        ])
 
-        # Iterate through the directories (patients) and find the DICOM file
-        patient_dirs = sorted(os.listdir(root_dir))  # Assuming each patient has a folder
-        for patient_dir in patient_dirs:
-            patient_path = os.path.join(root_dir, patient_dir)
-            if os.path.isdir(patient_path):
-                dicom_file = self.find_dicom_file(patient_path)
-                if dicom_file:
-                    self.image_paths.append(dicom_file)
-                    self.labels.append(int(patient_dir))  # Assuming patient directory is the label
+        for file in sorted(os.listdir(root_dir)):
+            if file.endswith(".png"):
+                self.image_paths.append(os.path.join(root_dir, file))
+                self.labels.append(int(os.path.splitext(file)[0]))
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        dicom_file = self.image_paths[idx]
-        dicom_data = pydicom.dcmread(dicom_file)
-        image = dicom_data.pixel_array  # Get pixel data as numpy array
-        
-        # Normalize and convert to tensor
+        image = Image.open(self.image_paths[idx])
         image = self.transform(image)
-        label = torch.tensor(self.labels[idx], dtype=torch.long)  
-        return image, label
+        label = torch.tensor(self.labels[idx], dtype=torch.long)
+        return image, label, self.image_paths[idx]
 
-    def find_dicom_file(self, directory):
-        for file in os.listdir(directory):
-            if file.endswith(".dcm"):
-                return os.path.join(directory, file)
-        return None
+def simulate_quantum_operation(patch, pulse_params, n_atoms):
+    # Simplified quantum simulation (classical approximation)
+    results = np.zeros(n_atoms)
+    for i in range(n_atoms):
+        # Simulate some transformation based on the pulse parameters
+        results[i] = np.sum(patch) * pulse_params[i]  # Just an example computation
+    return results
 
-def get_qadence_device(n_atoms):
-    lattice_positions = np.array([ 
-        [i, j] for i in range(int(np.sqrt(n_atoms))) for j in range(int(np.sqrt(n_atoms)))
-    ]) 
-    return lattice_positions
-
-def define_qadence_circuit(n_atoms, pulse_params):
-    lattice = get_qadence_device(n_atoms)
-    
+def define_simplified_circuit(n_atoms, pulse_params):
+    # Instead of using a quantum backend, we directly simulate the circuit's behavior
     def circuit(patch):
-        h = Backend(lattice)
-        
-        for i in range(n_atoms):
-            h.add_pulse(rydberg_hea.rabi, patch[i] * pulse_params[i], i)
-            h.add_pulse(rydberg_hea.detuning, -patch[i] * pulse_params[i], i)
-        
-        h.evolve(time=0.5)
-        results = h.measure()  
-        
-        return results
-    
+        return simulate_quantum_operation(patch, pulse_params, n_atoms)
     return circuit
 
 def qadence_quanvolution(image, circuit, patch_size, n_atoms):
@@ -78,7 +52,7 @@ def qadence_quanvolution(image, circuit, patch_size, n_atoms):
     
     height_patches = image.shape[0] // patch_size
     width_patches = image.shape[1] // patch_size
-    out = np.zeros((height_patches, width_patches, n_atoms * 32)) 
+    out = np.zeros((height_patches, width_patches, 128))  # Placeholder size for embedding
     
     for j in range(height_patches):
         for k in range(width_patches):
@@ -91,21 +65,44 @@ def qadence_quanvolution(image, circuit, patch_size, n_atoms):
                         patch.append(0)
             
             q_results = circuit(patch)
-            for c in range(n_atoms * 32):
+            for c in range(128):
                 out[j, k, c] = q_results[c % n_atoms] 
     
     return out
 
-def qadence_quanvolution_batch(images, circuit, patch_size, n_atoms):
-    batch_size = images.shape[0]
-    processed = [
-        qadence_quanvolution(images[i].detach().cpu().numpy(), circuit, patch_size, n_atoms)
-        for i in range(batch_size)
-    ]
+def save_embeddings(embeddings, filename):
+    # Flatten the embeddings and create a DataFrame
+    flat_embeddings = embeddings.reshape(-1, 128)  # Flatten to rows x 128
     
-    processed = np.array(processed)
-    return torch.tensor(processed, dtype=torch.float32).to(images.device)
+    # Create the header with 'Patient' followed by columns 0, 1, ..., 127
+    header = ['Patient'] + [str(i) for i in range(128)]
+    
+    # Save as CSV with the correct header
+    df = pd.DataFrame(flat_embeddings)
+    df.insert(0, 'Patient', range(1, len(df) + 1))  # Add patient column with 1-based index
+    df.to_csv(filename, index=False, header=header)
+
+def process_and_save_embeddings(dataset, circuit, patch_size, n_atoms, output_file):
+    embeddings_list = []  
+    
+    for i in range(len(dataset)):
+        image, _, image_path = dataset[i]
+        image = image.squeeze(0).numpy()
+        embeddings = qadence_quanvolution(image, circuit, patch_size, n_atoms)
+        
+        embeddings_flattened = embeddings.flatten()  # Flatten the embeddings
+        embeddings_list.append(embeddings_flattened)
+    
+    # Convert the embeddings list to a numpy array for easier manipulation
+    embeddings_array = np.array(embeddings_list)
+    
+    # Save the embeddings with the correct header
+    save_embeddings(embeddings_array, output_file)
 
 n_atoms = 4 
 pulse_params = np.random.uniform(0, 2 * np.pi, size=n_atoms)
-qadence_circuit = define_qadence_circuit(n_atoms, pulse_params)
+simplified_circuit = define_simplified_circuit(n_atoms, pulse_params)
+
+# Exemplo de uso
+dataset = PNGDataset("/home/eflammere/Pasqal_Hackathon_Feb25_Team_01/data/png")
+process_and_save_embeddings(dataset, simplified_circuit, patch_size=6, n_atoms=n_atoms, output_file="embeddings.csv")
