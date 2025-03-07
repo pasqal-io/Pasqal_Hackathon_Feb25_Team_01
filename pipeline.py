@@ -6,11 +6,13 @@ from src.qcnn.quanvolution import PNGDataset, QCNN
 import pandas as pd
 import argparse
 import logging
+import torch
 
 
 class Pipeline:
     def __init__(self, args):
         self.args = args
+        torch.manual_seed(42)
         logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
     def generate_data(self):

@@ -4,6 +4,7 @@ import sys
 import torch
 from torch.utils.data import DataLoader
 from torch.nn import BCELoss                        # Import BCELoss for binary classification
+import matplotlib.pyplot as plt
 
 from src.rmrm.model.network import Network
 from src.rmrm.embeddings import PrecomputedEmbeddingsDataset
@@ -14,6 +15,17 @@ class Trainer:
     def __init__(self, args):
         self.args = args
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    def plot_losses(self, train_losses):
+        # Plot Training Loss Curve
+        plt.figure(figsize=(10, 5))
+        plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', linestyle='-', color='b', label="Training Loss")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.title("Training Loss Curve")
+        plt.legend()
+        plt.grid()
+        plt.show()
 
     def train(self):
         json_opts = json_file_to_pyobj(self.args.config)
@@ -88,6 +100,8 @@ class Trainer:
 
         model = model.train()
 
+        train_losses = []
+
         for epoch in range(initial_epoch, json_opts.training_params.total_epochs):
             epoch_train_loss = 0.
 
@@ -122,6 +136,7 @@ class Trainer:
                     
             # Log training loss
             avg_train_loss = epoch_train_loss / len(train_loader)
+            train_losses.append(avg_train_loss)
             logging.info("Epoch %d - Average Binary Classification Loss: %.4f" % (epoch+1, avg_train_loss))
                     
             # Save model
@@ -138,3 +153,6 @@ class Trainer:
             logging.info('Epoch[{}/{}], total loss:{:.4f}'.format(epoch+1, json_opts.training_params.total_epochs, epoch_train_loss))
 
         logging.info("Training finished")
+
+        # plot loss curve
+        self.plot_losses(train_losses)
