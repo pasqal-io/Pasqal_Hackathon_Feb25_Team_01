@@ -21,7 +21,8 @@ class PNGDataset(Dataset):
         for file in sorted(os.listdir(root_dir)):
             if file.endswith(".png"):
                 self.image_paths.append(os.path.join(root_dir, file))
-                self.labels.append(int(os.path.splitext(file)[0]))
+                patient_id = int(os.path.splitext(file)[0])  # Patient ID from filename
+                self.labels.append(patient_id)
 
     def __len__(self):
         return len(self.labels)
@@ -70,39 +71,54 @@ def qadence_quanvolution(image, circuit, patch_size, n_atoms):
     
     return out
 
-def save_embeddings(embeddings, filename):
+def save_embeddings(embeddings, patient_ids, filename):
     # Flatten the embeddings and create a DataFrame
     flat_embeddings = embeddings.reshape(-1, 128)  # Flatten to rows x 128
     
     # Create the header with 'Patient' followed by columns 0, 1, ..., 127
     header = ['Patient'] + [str(i) for i in range(128)]
     
+    # Initialize a list to store patient IDs for each embedding row
+    all_patient_ids = []
+
+    # Determine the number of patches per image and repeat patient_id accordingly
+    for i, patient_id in enumerate(patient_ids):
+        num_patches = flat_embeddings.shape[0] // len(patient_ids)  # Get number of embeddings per patient
+        all_patient_ids.extend([patient_id] * num_patches)
+
+    # Ensure that the length of patient_ids matches the number of embedding rows
+    assert len(all_patient_ids) == flat_embeddings.shape[0], "Patient ID list does not match embedding rows"
+
     # Save as CSV with the correct header
     df = pd.DataFrame(flat_embeddings)
-    df.insert(0, 'Patient', range(1, len(df) + 1))  # Add patient column with 1-based index
+    df.insert(0, 'Patient', all_patient_ids)  # Add patient column with corresponding IDs
     df.to_csv(filename, index=False, header=header)
 
 def process_and_save_embeddings(dataset, circuit, patch_size, n_atoms, output_file):
     embeddings_list = []  
+    patient_ids = []  # Store patient IDs to be used in the CSV file
     
     for i in range(len(dataset)):
-        image, _, image_path = dataset[i]
+        image, label, _ = dataset[i]
         image = image.squeeze(0).numpy()
         embeddings = qadence_quanvolution(image, circuit, patch_size, n_atoms)
         
         embeddings_flattened = embeddings.flatten()  # Flatten the embeddings
         embeddings_list.append(embeddings_flattened)
+        
+        # Append the patient ID for the current image (for each embedding row)
+        patient_ids.append(label.item())
     
     # Convert the embeddings list to a numpy array for easier manipulation
     embeddings_array = np.array(embeddings_list)
     
-    # Save the embeddings with the correct header
-    save_embeddings(embeddings_array, output_file)
+    # Save the embeddings with the correct patient IDs
+    save_embeddings(embeddings_array, patient_ids, output_file)
 
+# Example usage
 n_atoms = 4 
 pulse_params = np.random.uniform(0, 2 * np.pi, size=n_atoms)
 simplified_circuit = define_simplified_circuit(n_atoms, pulse_params)
 
-# Exemplo de uso
 dataset = PNGDataset("/home/eflammere/Pasqal_Hackathon_Feb25_Team_01/data/png")
 process_and_save_embeddings(dataset, simplified_circuit, patch_size=6, n_atoms=n_atoms, output_file="embeddings.csv")
