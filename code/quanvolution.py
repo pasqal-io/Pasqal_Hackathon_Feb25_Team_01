@@ -4,45 +4,53 @@ import os
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 import torchvision.transforms as transforms
-from qadence import AnalogHamiltonianSimulation, rydberg
+import pandas as pd
+import pydicom
+from qadence import Backend, rydberg_hea
 
-class LiverDataset(Dataset):
-    def __init__(self, root_dir, train=True, data_augmentation=False):
+class DICOMDataset(Dataset):
+    def __init__(self, root_dir):
         self.image_paths = []
         self.labels = []
         
+        # No specific transformations here, just converting to tensor
         base_transform = [
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.5186, 0.5187, 0.5185], std=[0.1957, 0.1957, 0.1957])
+            transforms.Resize((36,36))
         ]
+        self.transform = transforms.Compose(base_transform)
 
-        augmentation_transform = [
-            transforms.RandomHorizontalFlip(p=0.5),
-            transforms.RandomRotation(degrees=15)
-        ]
-
-        if train and data_augmentation:
-            self.transform = transforms.Compose(augmentation_transform + base_transform)
-        else:
-            self.transform = transforms.Compose(base_transform)
-
-        for label in ['0', '1']:
-            folder_path = os.path.join(root_dir, label)
-            images = sorted(os.listdir(folder_path)) 
-            self.image_paths.extend([os.path.join(folder_path, img_name) for img_name in images])
-            self.labels.extend([int(label)] * len(images))
+        # Iterate through the directories (patients) and find the DICOM file
+        patient_dirs = sorted(os.listdir(root_dir))  # Assuming each patient has a folder
+        for patient_dir in patient_dirs:
+            patient_path = os.path.join(root_dir, patient_dir)
+            if os.path.isdir(patient_path):
+                dicom_file = self.find_dicom_file(patient_path)
+                if dicom_file:
+                    self.image_paths.append(dicom_file)
+                    self.labels.append(int(patient_dir))  # Assuming patient directory is the label
 
     def __len__(self):
         return len(self.labels)
 
     def __getitem__(self, idx):
-        image = Image.open(self.image_paths[idx]).convert('RGB')
+        dicom_file = self.image_paths[idx]
+        dicom_data = pydicom.dcmread(dicom_file)
+        image = dicom_data.pixel_array  # Get pixel data as numpy array
+        
+        # Normalize and convert to tensor
         image = self.transform(image)
         label = torch.tensor(self.labels[idx], dtype=torch.long)  
         return image, label
 
+    def find_dicom_file(self, directory):
+        for file in os.listdir(directory):
+            if file.endswith(".dcm"):
+                return os.path.join(directory, file)
+        return None
+
 def get_qadence_device(n_atoms):
-    lattice_positions = np.array([
+    lattice_positions = np.array([ 
         [i, j] for i in range(int(np.sqrt(n_atoms))) for j in range(int(np.sqrt(n_atoms)))
     ]) 
     return lattice_positions
@@ -51,13 +59,13 @@ def define_qadence_circuit(n_atoms, pulse_params):
     lattice = get_qadence_device(n_atoms)
     
     def circuit(patch):
-        h = AnalogHamiltonianSimulation(lattice)
+        h = Backend(lattice)
         
         for i in range(n_atoms):
-            h.add_pulse(rydberg.rabi, patch[i] * pulse_params[i], i)
-            h.add_pulse(rydberg.detuning, -patch[i] * pulse_params[i], i)
+            h.add_pulse(rydberg_hea.rabi, patch[i] * pulse_params[i], i)
+            h.add_pulse(rydberg_hea.detuning, -patch[i] * pulse_params[i], i)
         
-        h.evolve(time=1.0)
+        h.evolve(time=0.5)
         results = h.measure()  
         
         return results
@@ -98,21 +106,6 @@ def qadence_quanvolution_batch(images, circuit, patch_size, n_atoms):
     processed = np.array(processed)
     return torch.tensor(processed, dtype=torch.float32).to(images.device)
 
-
 n_atoms = 4 
 pulse_params = np.random.uniform(0, 2 * np.pi, size=n_atoms)
 qadence_circuit = define_qadence_circuit(n_atoms, pulse_params)
-
-root_dir = '/path/to/dataset' 
-dataset = LiverDataset(root_dir=root_dir, train=True, data_augmentation=True)
-dataloader = DataLoader(dataset, batch_size=4, shuffle=True)
-
-n_atoms = 4 
-pulse_params = np.random.uniform(0, 2 * np.pi, size=n_atoms)
-qadence_circuit = define_qadence_circuit(n_atoms, pulse_params)
-
-for images, labels in dataloader:
-    images = images.permute(0, 2, 3, 1).cpu().numpy() 
-    output_embeddings = qadence_quanvolution_batch(torch.tensor(images), qadence_circuit, patch_size=6, n_atoms=n_atoms)
-    print(output_embeddings.shape)  
-    
