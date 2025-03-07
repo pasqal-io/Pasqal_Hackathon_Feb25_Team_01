@@ -58,7 +58,7 @@ class Evaluator:
         
         test_loader = DataLoader(dataset=test_dataset, 
                                 batch_size=json_opts.training_params.batch_size, 
-                                shuffle=True,
+                                shuffle=False,
                                 num_workers=num_workers, 
                                 drop_last=True)
 

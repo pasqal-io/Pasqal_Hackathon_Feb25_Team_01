@@ -58,11 +58,11 @@ class DataPreprocessing:
         self.scaler = StandardScaler()
 
     def preprocesses_data(self):
-        df = pd.read_csv(self.data_path)
-        logging.info("Shape of DataFrame: %s", df.shape)
+        clinical_df = pd.read_csv(self.data_path)
+        logging.info("Shape of DataFrame: %s", clinical_df.shape)
 
-        y = df[self.target_column]
-        df = df.drop(columns=[self.target_column])      # Removing target from features
+        y = clinical_df[self.target_column]
+        df = clinical_df.drop(columns=[self.target_column])      # Removing target from features
 
         categorical_cols = df.select_dtypes(include=["object"]).columns
         for col in categorical_cols:
@@ -114,9 +114,9 @@ class DataPreprocessing:
         df_selected_normalized = self.scaler.fit_transform(df_final_reduced)
 
         # Converting to PyTorch tensor
-        patient_data = torch.tensor(df_selected_normalized, dtype=torch.float32)    # Shape: (105, num_features)
-        patient_ids = df[self.id_column].values                                     # Shape: (105,) ids
-        target_labels = torch.tensor(y.values, dtype=torch.long)                    # Shape: (105,) for classification
+        patient_data = torch.tensor(df_selected_normalized, dtype=torch.float32)                    # Shape: (105, num_features)
+        patient_ids = clinical_df[self.id_column].str.replace("HCC_", "").astype(int).tolist()      # Shape: (105,) ids
+        target_labels = torch.tensor(y.values, dtype=torch.long)                                    # Shape: (105,) for classification
 
         return patient_data, target_labels, patient_ids
 
@@ -150,7 +150,7 @@ class ClinicalDataEmbeddings:
         with torch.no_grad():
             embeddings, _ = self.model(data)
 
-        # Save embeddings and labels with patient IDs
+        # Save embeddings
         if isTrain: 
             logging.info("Train Embeddings shape: %s", embeddings.shape)
             np.save("data/clinical_data/train_embeddings.npy", embeddings.detach().cpu().numpy())
@@ -158,4 +158,4 @@ class ClinicalDataEmbeddings:
             logging.info("Test Embeddings shape: %s", embeddings.shape)
             np.save("data/clinical_data/test_embeddings.npy", embeddings.detach().cpu().numpy())
 
-        logging.info("Embeddings & labels saved successfully!")
+        logging.info("Clinical Embeddings saved successfully!")

@@ -15,7 +15,7 @@
         "model_freq": 1
     },
     "data_source": {
-        "img_embeddings_dir": "data/image_data/test_image_embeddings.npy",
+        "img_embeddings_dir": "data/image_data/test_embeddings.npy",
         "clinical_embeddings_dir": "data/clinical_data/test_embeddings.npy",
         "labels_file": "data/labels/test_labels.csv"
     },

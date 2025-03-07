@@ -9,26 +9,37 @@ from torch.utils.data import Dataset
 # Dataset class for precomputed embeddings
 class PrecomputedEmbeddingsDataset(Dataset):
     def __init__(self, img_embeddings_dir, clinical_embeddings_dir, labels_file, isTraining=True):
-        # Check valid data directories
-        if not os.path.exists(img_embeddings_dir):
-            sys.exit("Invalid image embeddings directory %s" % img_embeddings_dir)
-        if not os.path.exists(clinical_embeddings_dir):
-            sys.exit("Invalid clinical embeddings directory %s" % clinical_embeddings_dir)
-        if not os.path.exists(labels_file):
-            sys.exit("Invalid feature labels path %s" % labels_file)
-
         self.img_embeddings_dir = img_embeddings_dir
         self.clinical_embeddings_dir = clinical_embeddings_dir
         self.labels_file = labels_file
         self.isTraining = isTraining
 
+        # Load PRE-TRAINED embeddings
+        # CLINICAL EMBEDDINGS
+        if os.path.exists(self.clinical_embeddings_dir):
+            self.clinical_embds = np.load(self.clinical_embeddings_dir)
+            self.clinical_embds = torch.tensor(self.clinical_embds, dtype=torch.float32)
+            logging.info("Loaded clinical embeddings of size %s", self.clinical_embds.size())
+        else:
+            raise FileNotFoundError(f"Clinical embeddings not found at {self.clinical_embeddings_dir}")
+        
+        # IMAGE EMBEDDINGS
+        if os.path.exists(self.img_embeddings_dir):
+            self.image_embds= np.load(self.img_embeddings_dir)
+            self.image_embds = torch.tensor(self.image_embds, dtype=torch.float32)
+            logging.info("Loaded clinical embeddings of size %s", self.image_embds.size())
+        else:
+            raise FileNotFoundError(f"Clinical embeddings not found at {self.img_embeddings_dir}")
+
         # Target labels
-        self.labels_df = pd.read_csv(self.labels_file) 
-
-        # Get patients ids from labels file
-        self.patient_ids = self.labels_df.iloc[:, 0].tolist()
-        logging.info(f"Total Number of Patients: {len(self.patient_ids)}")
-
+        if os.path.exists(self.img_embeddings_dir):
+            self.labels_df = pd.read_csv(self.labels_file) 
+            self.labels = self.labels_df.iloc[:, 1].tolist()
+            self.patient_ids = self.labels_df.iloc[:, 0].tolist()
+            logging.info(f"Total Number of Patients: {len(self.patient_ids)}")
+        else:
+            raise FileNotFoundError(f"Labels not found at {self.labels_file}")
+    
     def __len__(self):
         'Denotes the total number of samples'
         return len(self.patient_ids)
@@ -37,33 +48,15 @@ class PrecomputedEmbeddingsDataset(Dataset):
         'Generates one sample of data'
         ID = self.patient_ids[index]
         logging.info(f"ID: {ID}")
-        
-        # Load PRE-TRAINED embeddings
-        # CLINICAL EMBEDDINGS
-        if os.path.exists(self.clinical_embeddings_dir):
-            clinical_embds = np.load(self.clinical_embeddings_dir)
-            clinical_embds = torch.tensor(clinical_embds, dtype=torch.float32)
-            clinical_embds = clinical_embds[index, :, :]
-            logging.info("Loaded clinical embeddings of size %s", clinical_embds.size())
-        else:
-            raise FileNotFoundError(f"Clinical embeddings not found at {self.clinical_embeddings_dir}")
-        
-        # IMAGE EMBEDDINGS
-        if os.path.exists(self.img_embeddings_dir):
-            image_embds= np.load(self.img_embeddings_dir)
-            image_embds = torch.tensor(image_embds, dtype=torch.float32)
-            image_embds = image_embds[index, :, :]
-            logging.info("Loaded clinical embeddings of size %s", image_embds.size())
-        else:
-            raise FileNotFoundError(f"Clinical embeddings not found at {self.img_embeddings_dir}")
+
+        clinical_embds = self.clinical_embds[index, :, :]
+        image_embds = self.image_embds[index, :, :]
+        logging.info("Clinical embeddings of size %s", clinical_embds.size())
+        logging.info("Image embeddings of size %s", image_embds.size())
             
-        # Labels (currenly only one label is used for binary classification)
-        labels = self.labels_df.loc[index].tolist()
-
         # Convert Labels to tensor
-        labels_torch = torch.tensor(labels[1], dtype=torch.float32)
+        labels_torch = torch.tensor(self.labels[index], dtype=torch.float32)
 
-        # TODO: ID is different than index (fix it to use ID instead)
         if self.isTraining:
             return image_embds, clinical_embds, labels_torch
         else:

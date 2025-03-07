@@ -2,6 +2,7 @@ from sklearn.model_selection import train_test_split
 from data.clinical_data.clinical_data_embeddings import DataPreprocessing, ClinicalDataEmbeddings
 from src.train import Trainer
 from src.test import Evaluator
+from src.qcnn.quanvolution import PNGDataset, QCNN
 import pandas as pd
 import argparse
 import logging
@@ -40,13 +41,20 @@ class Pipeline:
         
         # Generate Clinical Embeddings
         # size: [n, 34, 128]
-        embedding_generator = ClinicalDataEmbeddings(embedding_dim=embedding_dim, target_column=target_column)
-        embedding_generator.train_model(train_data, train_labels)
-        embedding_generator.generate_and_save_embeddings(train_data, isTrain=True)
-        embedding_generator.generate_and_save_embeddings(test_data, isTrain=False)
+        if self.args.data_type == 'both' or self.args.data_type == 'clinical':
+            embedding_generator = ClinicalDataEmbeddings(embedding_dim=embedding_dim, target_column=target_column)
+            embedding_generator.train_model(train_data, train_labels)
+            embedding_generator.generate_and_save_embeddings(train_data, isTrain=True)
+            embedding_generator.generate_and_save_embeddings(test_data, isTrain=False)
 
-        # TODO: Generate Image Embeddings
-        # size: [80, 6, 6, 128]
+        # Generate Image Embeddings
+        # size: [n, 6, 6, 128]
+        if self.args.data_type == 'both' or self.args.data_type == 'image':
+            png_dataset = PNGDataset("data/png")
+            qcnn = QCNN(n_atoms=4)
+            simplified_circuit = qcnn.define_simplified_circuit()
+            qcnn.process_and_save_embeddings(png_dataset, simplified_circuit, test_ids, patch_size=6, isTrain=False)
+            qcnn.process_and_save_embeddings(png_dataset, simplified_circuit, train_ids, patch_size=6, isTrain=True)
 
     def train(self):
         logging.info("Starting Training...")
@@ -63,6 +71,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default='src/config/config_train.json', help="Path to config file")
     parser.add_argument("--mode", type=str, choices=["data", "train", "test"], required=True, help="Mode: data, train, or test")
+    parser.add_argument("--data_type", type=str, default='both', choices=["clinical", "image", "both"], help="Which kind of embeddings to generate")
     parser.add_argument('--resume_epoch', default=None, type=int, help='resume training from this epoch, set to None for new training')
     parser.add_argument('--test_epoch', default=50, type=int, help='test model from this epoch')
 
