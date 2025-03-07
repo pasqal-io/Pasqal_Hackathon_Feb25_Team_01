@@ -1,35 +1,41 @@
 import os
-import pandas as pd
-import pydicom
 import numpy as np
+import pydicom
 import cv2
-from tqdm import tqdm
+from PIL import Image
 
-def dicom_to_png(input_folder, output_folder, csv_file):
-    benign_dir = os.path.join(output_folder, "0")
-    malign_dir = os.path.join(output_folder, "1")
-    os.makedirs(benign_dir, exist_ok=True)
-    os.makedirs(malign_dir, exist_ok=True)
+dicom_dir = "/home/eflammere/Pasqal_Hackathon_Feb25_Team_01/data/dicom"
+output_dir = "data/png"
+
+os.makedirs(output_dir, exist_ok=True)
+
+patient_id = 1
+
+for patient_folder in sorted(os.listdir(dicom_dir)):
+    patient_path = os.path.join(dicom_dir, patient_folder)
     
-    labels_df = pd.read_csv(csv_file)
-    labels_dict = dict(zip(labels_df['filename'], labels_df['label'])) # Column name to be checked
-    
-    for filename in tqdm(os.listdir(input_folder)):
-        if filename.endswith(".dcm"):
-            dicom_path = os.path.join(input_folder, filename)
-            ds = pydicom.dcmread(dicom_path)
-            pixel_array = ds.pixel_array
-            
-            pixel_array = (pixel_array - np.min(pixel_array)) / (np.max(pixel_array) - np.min(pixel_array)) * 255
-            pixel_array = pixel_array.astype(np.uint8)
-            
-            base_filename = os.path.splitext(filename)[0]
-            
-            label = labels_dict.get(base_filename, None)
-            if label is not None:
-                output_path = os.path.join(benign_dir if label == 0 else malign_dir, base_filename + ".png")
-                cv2.imwrite(output_path, pixel_array)
+    if os.path.isdir(patient_path):
+        for file in os.listdir(patient_path):
+            if file.endswith(".dcm"):
+                dicom_path = os.path.join(patient_path, file)
+                
+                try:
+                    dicom_data = pydicom.dcmread(dicom_path)
+                    image = dicom_data.pixel_array
 
+                    image = image.astype(np.float32)
+                    image = (image - image.min()) / (image.max() - image.min()) * 255.0
+                    image = image.astype(np.uint8)
 
-# Path to dicom, path to output folder and path to .csv
-dicom_to_png("", "", "")
+                    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+                    image = clahe.apply(image)
+
+                    image_pil = Image.fromarray(image)
+                    output_path = os.path.join(output_dir, f"{patient_id}.png")
+                    image_pil.save(output_path)
+
+                    print(f"Saved: {output_path}")
+                    patient_id += 1
+
+                except Exception as e:
+                    print(f"Error processing {dicom_path}: {e}")
