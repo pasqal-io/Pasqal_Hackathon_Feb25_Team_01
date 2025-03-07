@@ -62,13 +62,12 @@ if __name__ == '__main__':
     parser.add_argument("--config", type=str, default='src/config/config_train.json', help="Path to config file")
     parser.add_argument("--mode", type=str, choices=["data", "train", "test"], required=True, help="Mode: data, train, or test")
     parser.add_argument('--resume_epoch', default=None, type=int, help='resume training from this epoch, set to None for new training')
-    parser.add_argument('--test_epoch', default=-2, type=int, help='test model from this epoch, -1 for last, -2 for all')
+    parser.add_argument('--test_epoch', default=50, type=int, help='test model from this epoch, -1 for last, -2 for all')
     parser.add_argument('--fold_id', default=1, type=int, help='which cross-validation fold')
 
     args = parser.parse_args()
 
     pipeline = Pipeline(args)
-
     if args.mode == "data":
         pipeline.generate_data()
     elif args.mode == "train":

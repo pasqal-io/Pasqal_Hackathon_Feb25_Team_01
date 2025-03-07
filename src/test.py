@@ -61,12 +61,13 @@ class Evaluator:
         )
         
         test_loader = DataLoader(dataset=test_dataset, 
-                                batch_size=1, 
-                                shuffle=False, 
-                                num_workers=num_workers)
+                                batch_size=json_opts.training_params.batch_size, 
+                                shuffle=True, 
+                                num_workers=num_workers, 
+                                drop_last=True)
 
         # Load model
-        load_path = model_dir + "/epoch_%d.pth" % (self.args.epoch)
+        load_path = model_dir + "/epoch_%d.pth" % (self.args.test_epoch)
         checkpoint = torch.load(load_path)
         model.load_state_dict(checkpoint['model_state_dict'])
         print("Successfully loaded " + load_path)
@@ -76,25 +77,20 @@ class Evaluator:
         # Evaluation
         all_preds = []
         all_labels = []
-        all_censored = []
         all_ids = []
 
         with torch.no_grad():
-            for _, (img_embeddings, clinical_embeddings, batch_y, death_indicator, ids) in enumerate(test_loader):
+            for _, (img_embeddings, clinical_embeddings, batch_y, id) in enumerate(test_loader):
                 # Transfer to GPU
                 img_embeddings, clinical_embeddings = img_embeddings.to(self.device), clinical_embeddings.to(self.device)
                 batch_y = batch_y.to(self.device)
-                death_indicator = death_indicator.to(self.device)
 
-                # Get batch size (might be smaller for last batch)
-                batch_size = img_embeddings.size(0)
-                
                 # Reshape embeddings for more efficient processing
                 # Ensure image embeddings match expected dimensions
-                img_embeddings = img_embeddings.view(batch_size, model.n_pixel, -1)
+                img_embeddings = img_embeddings.view(json_opts.training_params.batch_size, model.n_pixel, -1)
                 
                 # Ensure clinical embeddings match expected dimensions
-                clinical_embeddings = clinical_embeddings.view(batch_size, model.n_clinical, -1)
+                clinical_embeddings = clinical_embeddings.view(json_opts.training_params.batch_size, model.n_clinical, -1)
 
                 # Forward pass with precomputed embeddings
                 final_pred = model.forward(clinical_embeddings, img_embeddings)
@@ -102,16 +98,14 @@ class Evaluator:
                 # Store predictions and labels
                 all_preds.append(final_pred.detach().cpu().numpy())
                 all_labels.append(batch_y.detach().cpu().numpy())
-                all_censored.append(death_indicator.detach().cpu().numpy())
-                all_ids.extend(ids)
+                all_ids.append(id)
 
         # Concatenate results
         all_preds = np.concatenate(all_preds, axis=0)
         all_labels = np.concatenate(all_labels, axis=0)
-        all_censored = np.concatenate(all_censored, axis=0)
 
         # Calculate C-index
-        c_index = concordance_index(all_labels, all_preds, all_censored)
+        c_index = concordance_index(all_labels, all_preds)
         logging.info("C-index: %.4f" % c_index)
 
         # Calculate accuracy, precision, recall, and F1 score for binary classification
@@ -130,8 +124,6 @@ class Evaluator:
         results = {
             'predictions': all_preds,
             'labels': all_labels,
-            'censored': all_censored,
-            'ids': all_ids,
             'c_index': c_index,
             'accuracy': accuracy,
             'precision': precision,
@@ -139,7 +131,7 @@ class Evaluator:
             'f1_score': f1
         }
         
-        save_path = test_output_dir + "/results_epoch_%d.pkl" % (self.args.epoch)
+        save_path = test_output_dir + "/results_epoch_%d.pkl" % (self.args.test_epoch)
         with open(save_path, 'wb') as f:
             pickle.dump(results, f)
         logging.info("Results saved to %s" % save_path)
