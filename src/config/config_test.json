@@ -8,7 +8,7 @@
     },
     "training_params":{
         "batch_size": 8,
-        "total_epochs": 100,
+        "total_epochs": 50,
         "learning_rate": 0.0001,
         "beta1": 0.9,
         "beta2": 0.999,
@@ -22,10 +22,10 @@
         "model_freq": 1
     },
     "data_source": {
-        "img_embeddings_dir": "data/Image data embeddings/image_embeddings_9_patients.npy",
-        "clinical_embeddings_dir": "data/Clinical data embeddings/patient_feature_embeddings.npy",
+        "img_embeddings_dir": "data/image_data/test_image_embeddings.npy",
+        "clinical_embeddings_dir": "data/clinical_data/test_embeddings.npy",
         "fold_splits": "/path/to/fold_splits",
-        "labels_file": "data/Labels/labels.csv"
+        "labels_file": "data/labels/test_labels.csv"
     },
     "experiment_dirs": {
         "load_dir": "last",
