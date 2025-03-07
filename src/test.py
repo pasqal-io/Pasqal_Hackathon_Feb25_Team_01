@@ -27,7 +27,7 @@ class Evaluator:
 
         # Create experiment directories
         make_new = False
-        timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir, self.args.fold_id)
+        timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir)
         experiment_path = 'results' + '/' + timestamp
         model_dir = experiment_path + '/' + json_opts.experiment_dirs.model_dir
         test_output_dir = experiment_path + '/' + json_opts.experiment_dirs.test_output_dir
@@ -35,13 +35,11 @@ class Evaluator:
 
         # Set up the model
         logging.info("Initialising model")
-        model_opts = json_opts.model_params
         n_out_features = 1
 
         # Initialize the model - we'll still use the original Network class
         # but we'll skip the feature extraction parts in the forward pass
-        model = Network(model_opts, 
-                        n_out_features, 
+        model = Network(n_out_features, 
                         json_opts.training_params.batch_size, 
                         self.device)
         model = model.to(self.device)
@@ -55,8 +53,6 @@ class Evaluator:
             json_opts.data_source.img_embeddings_dir,
             json_opts.data_source.clinical_embeddings_dir,
             json_opts.data_source.labels_file,
-            json_opts.data_source.fold_splits,
-            self.args.fold_id,
             isTraining=False
         )
         
@@ -70,7 +66,7 @@ class Evaluator:
         load_path = model_dir + "/epoch_%d.pth" % (self.args.test_epoch)
         checkpoint = torch.load(load_path)
         model.load_state_dict(checkpoint['model_state_dict'])
-        print("Successfully loaded " + load_path)
+        logging.info("Model Successfully loaded : %s", load_path)
 
         model = model.eval()
 

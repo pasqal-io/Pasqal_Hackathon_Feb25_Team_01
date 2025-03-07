@@ -59,7 +59,7 @@ class DataPreprocessing:
 
     def preprocesses_data(self):
         df = pd.read_csv(self.data_path)
-        print("Shape of DataFrame:", df.shape)
+        logging.info("Shape of DataFrame: %s", df.shape)
 
         y = df[self.target_column]
         df = df.drop(columns=[self.target_column])      # Removing target from features
@@ -143,19 +143,19 @@ class ClinicalDataEmbeddings:
             optimizer.step()
 
             if epoch % 50 == 0:
-                print(f"Epoch {epoch}, Loss: {loss.item():.6f}")
+                logging.info(f"Epoch {epoch}, Loss: {loss.item():.6f}")
 
-    def generate_and_save_embeddings(self, data, labels, isTrain=True):
+    def generate_and_save_embeddings(self, data, isTrain=True):
         """Generates embeddings for data and saves them along with labels."""
         with torch.no_grad():
             embeddings, _ = self.model(data)
 
         # Save embeddings and labels with patient IDs
         if isTrain: 
-            print("Train Embeddings shape: ", embeddings.shape)
+            logging.info("Train Embeddings shape: %s", embeddings.shape)
             np.save("data/clinical_data/train_embeddings.npy", embeddings.detach().cpu().numpy())
-        else: 
-            print("Test Embeddings shape: ", embeddings.shape)
+        else:
+            logging.info("Test Embeddings shape: %s", embeddings.shape)
             np.save("data/clinical_data/test_embeddings.npy", embeddings.detach().cpu().numpy())
 
-        print("Embeddings & labels saved successfully!")
+        logging.info("Embeddings & labels saved successfully!")

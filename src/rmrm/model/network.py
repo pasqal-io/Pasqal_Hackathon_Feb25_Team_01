@@ -5,7 +5,7 @@ from torch_geometric.data import Data
 from src.rmrm.model.components import RMRM, OutputBlock
 
 class Network(torch.nn.Module):
-    def __init__(self, opts, n_out_features, batch_size, device):
+    def __init__(self, n_out_features, batch_size, device):
         """
         Network for binary classification based on clinical and image embeddings.
 

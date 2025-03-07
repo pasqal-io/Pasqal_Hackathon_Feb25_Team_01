@@ -8,7 +8,7 @@ from torch.utils.data import Dataset
 
 # Dataset class for precomputed embeddings
 class PrecomputedEmbeddingsDataset(Dataset):
-    def __init__(self, img_embeddings_dir, clinical_embeddings_dir, labels_file, fold_splits, fold_id, isTraining=True):
+    def __init__(self, img_embeddings_dir, clinical_embeddings_dir, labels_file, isTraining=True):
         # Check valid data directories
         if not os.path.exists(img_embeddings_dir):
             sys.exit("Invalid image embeddings directory %s" % img_embeddings_dir)
@@ -63,6 +63,7 @@ class PrecomputedEmbeddingsDataset(Dataset):
         # Convert Labels to tensor
         labels_torch = torch.tensor(labels[1], dtype=torch.float32)
 
+        # TODO: ID is different than index (fix it to use ID instead)
         if self.isTraining:
             return image_embds, clinical_embds, labels_torch
         else:

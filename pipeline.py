@@ -42,8 +42,8 @@ class Pipeline:
         # size: [n, 34, 128]
         embedding_generator = ClinicalDataEmbeddings(embedding_dim=embedding_dim, target_column=target_column)
         embedding_generator.train_model(train_data, train_labels)
-        embedding_generator.generate_and_save_embeddings(train_data, train_labels, isTrain=True)
-        embedding_generator.generate_and_save_embeddings(test_data, test_labels, isTrain=False)
+        embedding_generator.generate_and_save_embeddings(train_data, isTrain=True)
+        embedding_generator.generate_and_save_embeddings(test_data, isTrain=False)
 
         # TODO: Generate Image Embeddings
         # size: [80, 6, 6, 128]
@@ -64,8 +64,7 @@ if __name__ == '__main__':
     parser.add_argument("--config", type=str, default='src/config/config_train.json', help="Path to config file")
     parser.add_argument("--mode", type=str, choices=["data", "train", "test"], required=True, help="Mode: data, train, or test")
     parser.add_argument('--resume_epoch', default=None, type=int, help='resume training from this epoch, set to None for new training')
-    parser.add_argument('--test_epoch', default=50, type=int, help='test model from this epoch, -1 for last, -2 for all')
-    parser.add_argument('--fold_id', default=1, type=int, help='which cross-validation fold')
+    parser.add_argument('--test_epoch', default=50, type=int, help='test model from this epoch')
 
     args = parser.parse_args()
 

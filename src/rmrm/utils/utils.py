@@ -59,21 +59,19 @@ def json_file_to_pyobj(filename):
     return json2obj(open(filename).read())
 
 
-def get_experiment_id(make_new, load_dir, fold_id):
+def get_experiment_id(make_new, load_dir):
     """
     Get timestamp ID of current experiment
     """    
-    if make_new is False:
+    if not make_new:
         if load_dir == 'last':
             folders = next(os.walk('results'))[1]
-            folders = [x for x in folders if ('fold' + str(fold_id) + '_') in x]
-            folders = sorted_alphanumeric(folders)
-            folder_last = folders[-1]
-            timestamp = folder_last.replace('\\','/')
+            folders = sorted_alphanumeric(folders)                   
+            timestamp = folders[-1] if folders else None
         else:
             timestamp = load_dir
     else:
-        timestamp = 'fold' + str(fold_id) + '_' + dt.datetime.now().strftime("%Y_%B_%d_%H_%M_%S")
+        timestamp = dt.datetime.now().strftime("%Y_%m_%d_%H_%M_%S")
     
     return timestamp
 

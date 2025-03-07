@@ -27,19 +27,16 @@ class Trainer:
             make_new = True 
         else:
             make_new = False
-        timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir, self.args.fold_id)
+        timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir)
         experiment_path = 'results' + '/' + timestamp
         make_dir(experiment_path + '/' + json_opts.experiment_dirs.model_dir)
 
         # Set up the model
         logging.info("Initialising model")
-        model_opts = json_opts.model_params
         n_out_features = 1
 
-        # Initialize the model - we'll still use the original Network class
-        # but we'll skip the feature extraction parts in the forward pass
-        model = Network(model_opts, 
-                        n_out_features,
+        # Initialize the model
+        model = Network(n_out_features,
                         json_opts.training_params.batch_size, 
                         self.device) 
         model = model.to(self.device)
@@ -53,8 +50,6 @@ class Trainer:
             json_opts.data_source.img_embeddings_dir,
             json_opts.data_source.clinical_embeddings_dir,
             json_opts.data_source.labels_file,
-            json_opts.data_source.fold_splits,
-            self.args.fold_id,
             isTraining=True
         )
         
@@ -87,7 +82,7 @@ class Trainer:
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             epoch = checkpoint['epoch']
             assert(epoch == self.args.resume_epoch)
-            print("Resume training, successfully loaded " + load_path)
+            logging.info("Resume training, successfully loaded %s ", load_path)
 
         logging.info("Begin training")
 
@@ -140,7 +135,6 @@ class Trainer:
                 logging.info("Model saved: %s" % save_path)
 
             # Print training loss every epoch
-            print('Epoch[{}/{}], total loss:{:.4f}'.format(epoch+1, json_opts.training_params.total_epochs, 
-                                                        epoch_train_loss))
+            logging.info('Epoch[{}/{}], total loss:{:.4f}'.format(epoch+1, json_opts.training_params.total_epochs, epoch_train_loss))
 
         logging.info("Training finished")
