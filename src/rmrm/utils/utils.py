@@ -65,7 +65,7 @@ def get_experiment_id(make_new, load_dir, fold_id):
     """    
     if make_new is False:
         if load_dir == 'last':
-            folders = next(os.walk('experiments'))[1]
+            folders = next(os.walk('results'))[1]
             folders = [x for x in folders if ('fold' + str(fold_id) + '_') in x]
             folders = sorted_alphanumeric(folders)
             folder_last = folders[-1]

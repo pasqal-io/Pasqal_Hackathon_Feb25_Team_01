@@ -28,7 +28,7 @@ class Trainer:
         else:
             make_new = False
         timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir, self.args.fold_id)
-        experiment_path = 'experiments' + '/' + timestamp
+        experiment_path = 'results' + '/' + timestamp
         make_dir(experiment_path + '/' + json_opts.experiment_dirs.model_dir)
 
         # Set up the model
@@ -60,7 +60,7 @@ class Trainer:
         
         train_loader = DataLoader(dataset=train_dataset, 
                                 batch_size=json_opts.training_params.batch_size, 
-                                shuffle=True, 
+                                shuffle=True,
                                 num_workers=num_workers, 
                                 drop_last=True)
 

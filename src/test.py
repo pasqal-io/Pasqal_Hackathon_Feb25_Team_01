@@ -28,7 +28,7 @@ class Evaluator:
         # Create experiment directories
         make_new = False
         timestamp = get_experiment_id(make_new, json_opts.experiment_dirs.load_dir, self.args.fold_id)
-        experiment_path = 'experiments' + '/' + timestamp
+        experiment_path = 'results' + '/' + timestamp
         model_dir = experiment_path + '/' + json_opts.experiment_dirs.model_dir
         test_output_dir = experiment_path + '/' + json_opts.experiment_dirs.test_output_dir
         make_dir(test_output_dir)
@@ -62,7 +62,7 @@ class Evaluator:
         
         test_loader = DataLoader(dataset=test_dataset, 
                                 batch_size=json_opts.training_params.batch_size, 
-                                shuffle=True, 
+                                shuffle=True,
                                 num_workers=num_workers, 
                                 drop_last=True)
 

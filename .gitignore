@@ -56,7 +56,7 @@ ehthumbs.db
 Thumbs.db 
 
 # Experiments results
-experiments/
+results/
 
 # Image data
 *.dcm

@@ -39,12 +39,14 @@ class Pipeline:
         test_labels_df.to_csv("data/labels/test_labels.csv", index=False)
         
         # Generate Clinical Embeddings
+        # size: [n, 34, 128]
         embedding_generator = ClinicalDataEmbeddings(embedding_dim=embedding_dim, target_column=target_column)
         embedding_generator.train_model(train_data, train_labels)
         embedding_generator.generate_and_save_embeddings(train_data, train_labels, isTrain=True)
         embedding_generator.generate_and_save_embeddings(test_data, test_labels, isTrain=False)
 
         # TODO: Generate Image Embeddings
+        # size: [80, 6, 6, 128]
 
     def train(self):
         logging.info("Starting Training...")
