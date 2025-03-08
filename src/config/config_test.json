@@ -1,0 +1,27 @@
+{
+    "data_params":{
+        "num_workers": 0
+    },
+    "training_params":{
+        "batch_size": 8,
+        "total_epochs": 100,
+        "learning_rate": 0.0001,
+        "beta1": 0.9,
+        "beta2": 0.999,
+        "l2_reg_alpha": 0.0001,
+        "lambda_aux": 4.0
+    },
+    "save_freqs":{
+        "model_freq": 1
+    },
+    "data_source": {
+        "img_embeddings_dir": "data/image_data/test_embeddings.npy",
+        "clinical_embeddings_dir": "data/clinical_data/test_embeddings.npy",
+        "labels_file": "data/labels/test_labels.csv"
+    },
+    "experiment_dirs": {
+        "load_dir": "last",
+        "model_dir" : "model",
+        "test_output_dir" : "test_output"
+    }
+}
