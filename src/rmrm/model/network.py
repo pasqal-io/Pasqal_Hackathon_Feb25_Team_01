@@ -1,8 +1,16 @@
 import torch
+import logging
+import sys
 import numpy as np
 from torch.nn import AvgPool2d
 from torch_geometric.data import Data
 from src.rmrm.model.components import RMRM, OutputBlock
+
+
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+                    level=logging.INFO,
+                    stream=sys.stdout)
+
 
 class Network(torch.nn.Module):
     def __init__(self, n_out_features, batch_size, device):
@@ -34,16 +42,35 @@ class Network(torch.nn.Module):
         self.output_mlp = OutputBlock(self.fv_dim * (self.n_clinical + 1), n_out_features)
 
     def get_edges(self, n_clinical, n_nodes):
+        """
+        Creates bidirectional edges between clinical nodes and image nodes
+        Adds a self-edge to each node
+
+        Total edges = n_nodes (self-edges) + 2 * n_clinical * n_pixel (bidirectional edges)
+        Total edges = 74 (self-edges) + 2736 (bidirectional edges) = 2810 edges
+
+        Parameters:
+        - n_clinical: number of clinical nodes
+        - n_nodes: number of all nodes (clinical + images)
+        """
         node_ids = np.expand_dims(np.arange(n_nodes, dtype=int), 0)
+        # self-edges = preserves some features of each own node during a graph convolution
         self_edges = np.concatenate((node_ids, node_ids), 0)
 
+        # clinical nodes
         c_array_asc = np.expand_dims(np.arange(n_clinical), 0)
         all_edges = self_edges[:]
 
         for i in range(n_clinical, n_nodes):
+            # image nodes
             i_array = np.expand_dims(np.array([i]*n_clinical), 0)
+
+            # image --> clinical
             inter_edges_ic = np.concatenate((i_array, c_array_asc), 0)
+            # clinical --> image
             inter_edges_ci = np.concatenate((c_array_asc, i_array), 0)
+
+            # bidirectional edges
             inter_edges_i = np.concatenate((inter_edges_ic, inter_edges_ci), 1)
             all_edges = np.concatenate((all_edges, inter_edges_i), 1)
 
@@ -51,16 +78,21 @@ class Network(torch.nn.Module):
 
     def forward(self, clinical_embeddings, image_embeddings):
         """
-        clinical_embeddings: Pre-trained clinical embeddings [batch_size, n_clinical, fv_dim]
-        image_embeddings: Pre-trained image embeddings [batch_size, n_pixel, img_dim]
+        Parameters:
+        - clinical_embeddings: Pre-trained clinical embeddings [batch_size, n_clinical, fv_dim]
+        - image_embeddings: Pre-trained image embeddings [batch_size, n_pixel, img_dim]
         """
 
-        # Ensure image embeddings match clinical feature dimension
-        image_embeddings = image_embeddings.view(self.batch_size, self.n_pixel, -1)
+        # Turn [batch_size, n_nodes, fv_dim] to [batch_size*n_nodes, fv_dim]
+        for ind in range(self.batch_size):
+            if ind == 0:
+                batch_semantic_fvs = clinical_embeddings[0,:,:]
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[0,:,:]),0)
+            else:
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, clinical_embeddings[ind,:,:]),0)
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[ind,:,:]),0)
 
-        # Merge embeddings for graph input
-        batch_semantic_fvs = torch.cat((clinical_embeddings, image_embeddings), dim=1)
-        batch_semantic_fvs = batch_semantic_fvs.view(-1, self.fv_dim)
+        logging.info("Combined Embedding Shape: %s", batch_semantic_fvs.shape)
 
         # Process graph data
         batch_edge_index = self.edge_index.clone()
@@ -69,6 +101,8 @@ class Network(torch.nn.Module):
             batch_edge_index = torch.cat((batch_edge_index, next_edge_index), 1)
 
         data = Data(x=batch_semantic_fvs, edge_index=batch_edge_index)
+
+        # RMRM
         batch_graph_fvs = self.graph_net(data)
 
         # Reshape RMRM Outputs
@@ -86,13 +120,13 @@ class Network(torch.nn.Module):
 
         # Apply GAP to image graph features
         graph_fvs_i = torch.transpose(graph_fvs_i, 1, 2)
-        gap = self.gap(graph_fvs_i.view(self.batch_size, self.fv_dim, 6, 6)).squeeze(-1).squeeze(-1)
+        gap = self.gap(torch.reshape(graph_fvs_i, (self.batch_size, self.fv_dim, 6, 6))).squeeze(-1).squeeze(-1)
 
         # Combine Clinical and Image Features
         combined = torch.cat((graph_fvs_c, gap.unsqueeze(1)), 1)
-        combined = combined.view(self.batch_size, -1)
+        combined = torch.reshape(combined, (self.batch_size, -1))
 
-        # Survival Prediction
+        # Classification Prediction
         feature_preds = self.output_mlp(combined)
 
         return feature_preds

@@ -52,7 +52,7 @@ def weights_init_orthogonal(m):
         init.normal_(m.weight.data, 1.0, 0.02)
         init.constant_(m.bias.data, 0.0)
 
-def init_weights(net, init_type='kaiming'):
+def init_weights(net, init_type='glorot'):
     if init_type == 'normal':
         net.apply(weights_init_normal)
     elif init_type == 'xavier':
@@ -65,13 +65,3 @@ def init_weights(net, init_type='kaiming'):
         net.apply(weights_init_orthogonal)
     else:
         raise NotImplementedError('initialization method [%s] is not implemented' % init_type)
-    
-# def init_weights(m):
-#     if type(m) == nn.Linear:
-#         init.xavier_uniform(m.weight)
-#         m.bias.data.fill_(0.01)
-
-# def weights_init(m):
-#     if isinstance(m, nn.Conv2d):
-#         nn.init.xavier_uniform(m.weight.data)
-#         nn.init.xavier_uniform(m.bias.data)

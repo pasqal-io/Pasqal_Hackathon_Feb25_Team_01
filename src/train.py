@@ -3,7 +3,7 @@ import sys
 
 import torch
 from torch.utils.data import DataLoader
-from torch.nn import BCELoss                        # Import BCELoss for binary classification
+from torch.nn import BCELoss
 import matplotlib.pyplot as plt
 
 from src.rmrm.model.network import Network
@@ -16,7 +16,7 @@ class Trainer:
         self.args = args
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def plot_losses(self, train_losses):
+    def plot_losses(self, train_losses, save_dir):
         # Plot Training Loss Curve
         plt.figure(figsize=(10, 5))
         plt.plot(range(1, len(train_losses) + 1), train_losses, marker='o', linestyle='-', color='b', label="Training Loss")
@@ -24,7 +24,7 @@ class Trainer:
         plt.ylabel("Loss")
         plt.title("Training Loss Curve")
         plt.legend()
-        plt.grid()
+        plt.savefig(save_dir + 'plot_loss.png')
         plt.show()
 
     def train(self):
@@ -138,21 +138,20 @@ class Trainer:
             avg_train_loss = epoch_train_loss / len(train_loader)
             train_losses.append(avg_train_loss)
             logging.info("Epoch %d - Average Binary Classification Loss: %.4f" % (epoch+1, avg_train_loss))
-                    
-            # Save model
-            if (epoch % json_opts.save_freqs.model_freq) == 0:
-                save_path = experiment_path + '/' + json_opts.experiment_dirs.model_dir + \
-                            "/epoch_%d.pth" % (epoch+1)
-                torch.save({'epoch': epoch + 1,
-                            'model_state_dict': model.state_dict(),
-                            'optimizer_state_dict': optimizer.state_dict(),
-                            }, save_path)
-                logging.info("Model saved: %s" % save_path)
 
             # Print training loss every epoch
             logging.info('Epoch[{}/{}], total loss:{:.4f}'.format(epoch+1, json_opts.training_params.total_epochs, epoch_train_loss))
 
+        # Save the model only at the last epoch
+        final_save_path = experiment_path + '/' + json_opts.experiment_dirs.model_dir + "/final_model.pth"
+        torch.save({'epoch': json_opts.training_params.total_epochs,
+                    'model_state_dict': model.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict(),
+                    }, final_save_path)
+        logging.info("Final model saved: %s" % final_save_path)
+
         logging.info("Training finished")
 
         # plot loss curve
-        self.plot_losses(train_losses)
+        plot_save_dir = experiment_path + '/' + json_opts.experiment_dirs.model_dir + '/plot'
+        self.plot_losses(train_losses, plot_save_dir)

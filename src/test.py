@@ -63,10 +63,14 @@ class Evaluator:
                                 drop_last=True)
 
         # Load model
-        load_path = model_dir + "/epoch_%d.pth" % (self.args.test_epoch)
+        model_files = [f for f in os.listdir(model_dir) if f.endswith(".pth")]
+        if len(model_files) != 1:
+            raise ValueError(f"Expected exactly one model file in {model_dir}, but found {len(model_files)}.")
+
+        load_path = os.path.join(model_dir, model_files[0])
         checkpoint = torch.load(load_path)
         model.load_state_dict(checkpoint['model_state_dict'])
-        logging.info("Model Successfully loaded : %s", load_path)
+        logging.info("Model Successfully loaded: %s", load_path)
 
         model = model.eval()
 
@@ -127,7 +131,7 @@ class Evaluator:
             'f1_score': f1
         }
         
-        save_path = test_output_dir + "/results_epoch_%d.pkl" % (self.args.test_epoch)
+        save_path = test_output_dir + "/results.pkl"
         with open(save_path, 'wb') as f:
             pickle.dump(results, f)
         logging.info("Results saved to %s" % save_path)

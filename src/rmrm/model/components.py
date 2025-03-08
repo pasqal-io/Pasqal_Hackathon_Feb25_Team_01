@@ -8,6 +8,7 @@ from src.rmrm.model.intialisation import init_weights
 class RMRM(torch.nn.Module):
     def __init__(self, num_node_features):
         super(RMRM, self).__init__()
+        # uses default xavier uniform weights
         self.conv1 = GATConv(num_node_features, 8, heads=8)
         self.conv2 = GATConv(8*8, num_node_features)
 
@@ -32,6 +33,7 @@ class OutputBlock(nn.Module):
             )
             setattr(self, 'feature_mlp_%d' %i, feature_mlp)
 
+        # initialise with glorot weights
         for m in self.children():
             init_weights(m, init_type='glorot')
 
