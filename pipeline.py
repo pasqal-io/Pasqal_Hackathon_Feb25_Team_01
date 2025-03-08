@@ -56,9 +56,9 @@ class Pipeline:
         if self.args.data_type == 'both' or self.args.data_type == 'image':
             png_dataset = PNGDataset("data/image_data/png")
             qcnn = QCNN(n_atoms=4)
-            simplified_circuit = qcnn.define_simplified_circuit()
-            qcnn.process_and_save_embeddings(png_dataset, simplified_circuit, test_ids, patch_size=6, isTrain=False)
-            qcnn.process_and_save_embeddings(png_dataset, simplified_circuit, train_ids, patch_size=6, isTrain=True)
+            qadence_circuit = qcnn.define_qadence_circuit()
+            qcnn.process_and_save_embeddings(png_dataset, qadence_circuit, test_ids, patch_size=6, filename="train_embeddings.npy")
+            qcnn.process_and_save_embeddings(png_dataset, qadence_circuit, train_ids, patch_size=6, filename="test_embeddings.npy")
 
     def train(self):
         logging.info("Starting Training...")
