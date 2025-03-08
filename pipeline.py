@@ -1,3 +1,4 @@
+import os
 from sklearn.model_selection import train_test_split
 from src.pvem.clinical_data_embeddings import DataPreprocessing, ClinicalDataEmbeddings
 from src.train import Trainer
@@ -13,9 +14,12 @@ class Pipeline:
     def __init__(self, args):
         self.args = args
         torch.manual_seed(42)
-        logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+        #logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
     def generate_data(self):
+        if self.args.use_pregen:
+            logging.info("Using pre-generated embeddings; skipping generation.")
+            return
         # Target variable [Censored_0_progressed_1 → 1: Indicates liver cancer and 0: Indicates no progression or absence of liver cancer]
         target_column = "Censored_0_progressed_1"
         id_column = "TCIA_ID"
@@ -73,10 +77,11 @@ class Pipeline:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config", type=str, default='src/config/config_train.json', help="Path to config file")
+    parser.add_argument("--config", type=str, default='src/config/config_test.json', help="Path to config file")
     parser.add_argument("--mode", type=str, choices=["data", "train", "test"], required=True, help="Mode: data, train, or test")
     parser.add_argument("--data_type", type=str, default='both', choices=["clinical", "image", "both"], help="Which kind of embeddings to generate")
     parser.add_argument('--resume_epoch', default=None, type=int, help='resume training from this epoch, set to None for new training')
+    parser.add_argument('--use_pregen', action='store_true', help='Use pre-generated embeddings')
 
     args = parser.parse_args()
 

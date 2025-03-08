@@ -30,9 +30,9 @@ class Trainer:
     def train(self):
         json_opts = json_file_to_pyobj(self.args.config)
 
-        logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-                            level=logging.INFO,
-                            stream=sys.stdout)
+        #logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+        #                    level=logging.INFO,
+        #                    stream=sys.stdout)
 
         # Create experiment directories
         if self.args.resume_epoch == None:
@@ -52,6 +52,7 @@ class Trainer:
                         json_opts.training_params.batch_size, 
                         self.device) 
         model = model.to(self.device)
+        model = model.float()   # Ensure model parameters are float32
 
         # Dataloader for precomputed embeddings
         logging.info("Preparing data")

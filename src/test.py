@@ -43,7 +43,8 @@ class Evaluator:
                         json_opts.training_params.batch_size, 
                         self.device)
         model = model.to(self.device)
-
+        model = model.float()   # Ensure model parameters are float32
+        
         # Dataloader for precomputed embeddings
         logging.info("Preparing data")
         num_workers = json_opts.data_params.num_workers
@@ -72,6 +73,7 @@ class Evaluator:
         model.load_state_dict(checkpoint['model_state_dict'])
         logging.info("Model Successfully loaded: %s", load_path)
 
+        
         model = model.eval()
 
         # Evaluation

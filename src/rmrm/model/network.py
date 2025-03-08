@@ -7,9 +7,9 @@ from torch_geometric.data import Data
 from src.rmrm.model.components import RMRM, OutputBlock
 
 
-logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
-                    level=logging.INFO,
-                    stream=sys.stdout)
+#logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s',
+#                    level=logging.INFO,
+#                    stream=sys.stdout)
 
 
 class Network(torch.nn.Module):
@@ -82,15 +82,18 @@ class Network(torch.nn.Module):
         - clinical_embeddings: Pre-trained clinical embeddings [batch_size, n_clinical, fv_dim]
         - image_embeddings: Pre-trained image embeddings [batch_size, n_pixel, img_dim]
         """
-
+        # Ensure the embeddings are in float32 to match model weights
+        clinical_embeddings = clinical_embeddings.float()
+        image_embeddings = image_embeddings.float()
+        
         # Turn [batch_size, n_nodes, fv_dim] to [batch_size*n_nodes, fv_dim]
         for ind in range(self.batch_size):
             if ind == 0:
                 batch_semantic_fvs = clinical_embeddings[0,:,:]
-                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[0,:,:]),0)
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[0,:,:]), 0)
             else:
-                batch_semantic_fvs = torch.cat((batch_semantic_fvs, clinical_embeddings[ind,:,:]),0)
-                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[ind,:,:]),0)
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, clinical_embeddings[ind,:,:]), 0)
+                batch_semantic_fvs = torch.cat((batch_semantic_fvs, image_embeddings[ind,:,:]), 0)
 
         logging.info("Combined Embedding Shape: %s", batch_semantic_fvs.shape)
 
