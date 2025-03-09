@@ -38,8 +38,13 @@ Our model variants include:
 
 ## Installation and setup instructions
 
-This project requires **Python 3.9**. The dependencies are listed in the _requirements.txt_ file and can be installed as follows:
+Before installing the libraries, create and activate a conda environment with Python 3.9.21:
+```bash
+conda create -n myenv python=3.9.21
+conda activate myenv
+```
 
+To install the project dependencies:
 ```bash
 pip install -r requirements.txt
 ```
