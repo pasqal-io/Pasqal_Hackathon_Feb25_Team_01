@@ -17,12 +17,12 @@ y_train = x_train**2
 
 # Train model once
 logging.info("Training model...")
-qcnn.train_model(x_train, y_train, epochs=40, lr=0.1)
+qcnn.train_model(x_train, y_train, epochs=130, lr=0.1)
 
 # Generate embeddings for training set
 train_ids = patient_ids[:len(patient_ids)//2]
 test_ids = patient_ids[len(patient_ids)//2:]
 
-qcnn.process_and_save_embeddings(png_dataset, circuit, train_ids, patch_size=6, filename="train_embeddings.npy")
+qcnn.process_and_save_embeddings(png_dataset, circuit, train_ids, patch_size=6, filename="qtrain_embeddings.npy")
 
-qcnn.process_and_save_embeddings(png_dataset, circuit, test_ids, patch_size=6, filename="test_embeddings.npy")
+qcnn.process_and_save_embeddings(png_dataset, circuit, test_ids, patch_size=6, filename="qtest_embeddings.npy")

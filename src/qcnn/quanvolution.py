@@ -109,12 +109,19 @@ class QCNN:
                         # Handle complex numbers by taking the real part or magnitude
                         result = result.mean()
                         if result.is_complex():
-                            result = result.real  # Use real part if it's complex
-                        out[j, k, c] = result.item()  # Convert to scalar
+                            if c % 2 == 0:
+                                out[j, k, c] = result.real.item()
+                            else:
+                                out[j, k, c] = result.imag.item()
+                        else:
+                            out[j, k, c] = result.item()  # Convert to scalar
                     else:
                         # Handle scalar case (real or complex)
                         if result.is_complex():
-                            out[j, k, c] = result.real.item()  # Use real part of the scalar
+                            if c % 2 == 0:
+                                out[j, k, c] = result.real.item()
+                            else:
+                                out[j, k, c] = result.imag.item()
                         else:
                             out[j, k, c] = result.item()  # If it's already a scalar, just extract the value
         
