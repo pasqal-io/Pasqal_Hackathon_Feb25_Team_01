@@ -93,30 +93,26 @@ class QCNN:
                         else:
                             patch.append(0)
 
-                # Convert the patch to a tensor
                 patch_tensor = torch.tensor(patch, dtype=torch.float32).reshape(1, patch_size, patch_size)
                 
-                # Ensure the tensor is compatible with the quantum circuit's expected input
-                patch_tensor = patch_tensor.unsqueeze(0)  # Add batch dimension
+                patch_tensor = patch_tensor.unsqueeze(0) 
                 
-                # Pass the patch as a tensor to the quantum circuit
                 q_results = circuit({"x": patch_tensor})
 
-                # Assuming q_results is a tensor with multiple elements, reduce it (e.g., using mean or max)
                 for c in range(128):
                     result = q_results[c % n_atoms]
                     if result.numel() > 1:
                         # Handle complex numbers by taking the real part or magnitude
                         result = result.mean()
                         if result.is_complex():
-                            result = result.real  # Use real part if it's complex
-                        out[j, k, c] = result.item()  # Convert to scalar
+                            result = result.real
+                        out[j, k, c] = result.item()
                     else:
                         # Handle scalar case (real or complex)
                         if result.is_complex():
-                            out[j, k, c] = result.real.item()  # Use real part of the scalar
+                            out[j, k, c] = result.real.item()
                         else:
-                            out[j, k, c] = result.item()  # If it's already a scalar, just extract the value
+                            out[j, k, c] = result.item()
         
         return out
 
