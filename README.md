@@ -146,7 +146,7 @@ The model achieves strong performance metrics on the test set, with detailed eva
 
 Team 01 (QScreen) - The Blaise Pascal Quantum Challenge
 
-1. Amerigo Veletti
+1. Amerigo Velletti
 2. Chiara Paglioni
 3. Milena Kapralova
 4. Sahil Singh
