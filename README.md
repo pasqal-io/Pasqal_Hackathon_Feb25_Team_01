@@ -130,10 +130,10 @@ Our GNN architecture consists of:
 ## Results
 
 The model achieves strong performance metrics on the test set, with detailed evaluation available in the notebooks including:
-- Accuracy
-- Precision
-- Recall
-- F1-Score
+- Accuracy: 76.19
+- Precision: 0.66
+- Recall: 0.88
+- F1-Score: 0.76
 
 ## Future Work
 
