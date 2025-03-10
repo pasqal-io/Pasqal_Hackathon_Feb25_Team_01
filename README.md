@@ -3,7 +3,10 @@
 
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=white)](https://pytorch.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyTorch Geometric](https://img.shields.io/badge/PyG-2.6.1-blue.svg)](https://pytorch-geometric.readthedocs.io/)
+[![Qadence](https://img.shields.io/badge/Qadence-1.11.0-orange.svg)](https://github.com/pasqal-io/qadence)
+[![Conda](https://img.shields.io/badge/Conda-Compatible-green.svg)](https://docs.conda.io/)
+[![NumPy](https://img.shields.io/badge/NumPy-1.26.2-blue.svg)](https://numpy.org/)
 
 A multimodal Quantum AI solution integrating clinical and imaging data in a Graph Neural Network (GNN) for early cancer detection. Enhances healthcare access, aligns with SDG 3, and transforms global health sustainability with real-world data integration.
 
