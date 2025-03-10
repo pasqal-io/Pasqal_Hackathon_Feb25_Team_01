@@ -1,5 +1,5 @@
 # ⚛️ Quantum AI for Multimodal Early Cancer Detection 🔬🏥
-## The Blaise Pascal Quantum Challenge
+## The Blaise Pascal Quantum Challenge | Team QScreen
 
 [![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-%23EE4C2C.svg?style=flat&logo=PyTorch&logoColor=white)](https://pytorch.org/)
@@ -144,8 +144,11 @@ The model achieves strong performance metrics on the test set, with detailed eva
 
 ## Contributors
 
-Team 01 - The Blaise Pascal Quantum Challenge
+Team 01 (QScreen) - The Blaise Pascal Quantum Challenge
 
-## License
-
-MIT License
+1. Amerigo Veletti
+2. Chiara Paglioni
+3. Milena Kapralova
+4. Sahil Singh
+5. Usama Khatab
+6. Yasmin Sobrinho
